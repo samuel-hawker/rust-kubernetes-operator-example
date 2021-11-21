@@ -6,7 +6,7 @@ use kube_runtime::controller::{Context, ReconcilerAction};
 use kube_runtime::Controller;
 use tokio::time::Duration;
 
-use crate::crd::Echo;
+use crate::crd::KafkaClient;
 
 pub mod crd;
 mod echo;
@@ -21,7 +21,7 @@ async fn main() {
         .expect("Expected a valid KUBECONFIG environment variable.");
 
     // Preparation of resources used by the `kube_runtime::Controller`
-    let crd_api: Api<Echo> = Api::all(kubernetes_client.clone());
+    let crd_api: Api<KafkaClient> = Api::all(kubernetes_client.clone());
     let context: Context<ContextData> = Context::new(ContextData::new(kubernetes_client.clone()));
 
     // The controller comes from the `kube_runtime` crate and manages the reconciliation process.
@@ -72,7 +72,7 @@ enum Action {
     NoOp,
 }
 
-async fn reconcile(echo: Echo, context: Context<ContextData>) -> Result<ReconcilerAction, Error> {
+async fn reconcile(echo: KafkaClient, context: Context<ContextData>) -> Result<ReconcilerAction, Error> {
     let client: Client = context.get_ref().client.clone(); // The `Client` is shared -> a clone from the reference is obtained
 
     // The resource of `Echo` kind is required to have a namespace set. However, it is not guaranteed
@@ -140,7 +140,7 @@ async fn reconcile(echo: Echo, context: Context<ContextData>) -> Result<Reconcil
 ///
 /// # Arguments
 /// - `echo`: A reference to `Echo` being reconciled to decide next action upon.
-fn determine_action(echo: &Echo) -> Action {
+fn determine_action(echo: &KafkaClient) -> Action {
     return if echo.meta().deletion_timestamp.is_some() {
         Action::Delete
     } else if echo
